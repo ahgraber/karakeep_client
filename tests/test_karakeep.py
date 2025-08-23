@@ -404,7 +404,7 @@ async def test_add_bookmark_tags_validation_invalid_type(client: KarakeepClient)
 
 def test_extract_url_from_bookmark():
     """Test that _extract_url_from_bookmark returns appropriate URLs."""
-    from karakeep_client.karakeep import _extract_url_from_bookmark
+    from karakeep_client.karakeep import extract_url_from_bookmark
     from karakeep_client.models import Bookmark
 
     # Test with link content
@@ -424,7 +424,7 @@ def test_extract_url_from_bookmark():
         "assets": [],
     }
     link_bookmark = Bookmark.model_validate(link_bookmark_data)
-    assert _extract_url_from_bookmark(link_bookmark) == "https://example.com/link"
+    assert extract_url_from_bookmark(link_bookmark) == "https://example.com/link"
 
     # Test with text content having sourceUrl
     text_bookmark_data = {
@@ -443,7 +443,7 @@ def test_extract_url_from_bookmark():
         "assets": [],
     }
     text_bookmark = Bookmark.model_validate(text_bookmark_data)
-    assert _extract_url_from_bookmark(text_bookmark) == "https://example.com/source"
+    assert extract_url_from_bookmark(text_bookmark) == "https://example.com/source"
 
     # Test with no extractable URL
     no_url_bookmark_data = {
@@ -462,7 +462,7 @@ def test_extract_url_from_bookmark():
         "assets": [],
     }
     no_url_bookmark = Bookmark.model_validate(no_url_bookmark_data)
-    assert _extract_url_from_bookmark(no_url_bookmark) is None
+    assert extract_url_from_bookmark(no_url_bookmark) is None
 
 
 @pytest.mark.asyncio

@@ -364,7 +364,7 @@ class KarakeepClient:
 
             # Find exact URL match
             for bookmark in search_response.bookmarks:
-                bookmark_url = _extract_url_from_bookmark(bookmark, self.verbose)
+                bookmark_url = extract_url_from_bookmark(bookmark, self.verbose)
                 if bookmark_url and validate_url(bookmark_url.strip()) == url:
                     return bookmark.id
 
@@ -870,7 +870,7 @@ class KarakeepClient:
             raise APIError(error_msg)
 
 
-def _extract_url_from_bookmark(bookmark: Any, verbose: bool = False) -> Optional[str]:
+def extract_url_from_bookmark(bookmark: Any, verbose: bool = False) -> Optional[str]:
     """Extract URL from a bookmark object.
 
     Args:
@@ -937,7 +937,7 @@ async def get_all_urls(
 
             # Extract URLs from current page
             for bookmark in bookmarks:
-                url = _extract_url_from_bookmark(bookmark, client.verbose)
+                url = extract_url_from_bookmark(bookmark, client.verbose)
                 if url:
                     all_urls.add(url)
 
