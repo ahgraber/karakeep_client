@@ -33,13 +33,13 @@ From source (recommended for development):
 2. Install in editable mode:
 
    ```bash
-   pip install -e .
+   uv sync --dev
    ```
 
 Or, for a plain install:
 
 ```bash
-pip install .
+uv sync
 ```
 
 Configuration
@@ -86,7 +86,7 @@ A demonstration script is included at `notebooks/karakeep_client_demo.py`. It sh
 Notes
 
 - Response validation: by default, responses are validated using Pydantic models defined in karakeep_client.karakeep. You can disable validation by passing `disable_response_validation=True` to the KarakeepClient constructor or to individual methods.
-- Asset retrieval returns raw bytes (Accept: */*). Bookmark content types include link, text, asset and unknown; helper functions attempt to extract canonical URLs.
+- Asset retrieval returns raw bytes (Accept: */*). Bookmark content types include link, text, asset, and unknown; helper functions attempt to extract canonical URLs.
 - The client is asynchronous and built on httpx; ensure you run it from an async context.
 
 Contributing
@@ -95,4 +95,4 @@ Contributions and fixes are welcome. Please open issues or pull requests with cl
 
 License
 
-Specify your project's license here.
+[AGPL-3.0](https://github.com/ahgraber/karakeep-client/blob/main/LICENSE)
