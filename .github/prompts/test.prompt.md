@@ -23,7 +23,7 @@ DO NOT MAKE CHANGES TO SOURCE CODE. You can only make changes to the unit tests.
 
 ### Testing Framework & Structure
 
-- Use pytest as the primary testing framework.
+- Use pytest as the primary testing framework. Activate the uv .venv before running pytest.
 - Structure tests using the Arrange-Act-Assert (AAA) pattern.
 - Create separate test classes for different components or behaviors
 
