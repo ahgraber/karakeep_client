@@ -603,7 +603,7 @@ class TestKarakeepClientInit:
         with patch.dict("os.environ", {}, clear=True), pytest.raises(ValueError, match="Base URL must be provided"):
             KarakeepClient(api_key="test_key")
 
-    @patch.dict("os.environ", {"KARAKEEP_API_KEY": "env_key", "KARAKEEP_BASEURL": "https://env.example.com"})
+    @patch.dict("os.environ", {"KARAKEEP_API_KEY": "env_key", "KARAKEEP_BASE_URL": "https://env.example.com"})
     def test_client_init_from_environment(self):
         """Test client initialization from environment variables."""
         # Arrange & Act

@@ -103,7 +103,7 @@ class KarakeepClient:
 
     Args:
         api_key: Karakeep API key. If None, will use KARAKEEP_API_KEY environment variable.
-        base_url: Base URL for Karakeep API. If None, will use KARAKEEP_BASEURL environment variable.
+        base_url: Base URL for Karakeep API. If None, will use KARAKEEP_BASE_URL environment variable.
         timeout: Request timeout in seconds (default: 30.0).
         verbose: Enable verbose logging (default: False).
     """
@@ -119,9 +119,9 @@ class KarakeepClient:
         if not self.api_key:
             raise ValueError("API key must be provided or set in KARAKEEP_API_KEY environment variable")
 
-        self.base_url = base_url or os.environ.get("KARAKEEP_BASEURL")
+        self.base_url = base_url or os.environ.get("KARAKEEP_BASE_URL")
         if not self.base_url:
-            raise ValueError("Base URL must be provided or set in KARAKEEP_BASEURL environment variable")
+            raise ValueError("Base URL must be provided or set in KARAKEEP_BASE_URL environment variable")
 
         self.api_base_url = urljoin(self.base_url, "/api/v1/")  # needs trailing /
         self.timeout = timeout
@@ -913,7 +913,7 @@ async def get_all_urls(
 
     Args:
         api_key: Karakeep API key. If None, will use KARAKEEP_API_KEY environment variable.
-        base_url: Base URL for Karakeep API. If None, will use KARAKEEP_BASEURL environment variable.
+        base_url: Base URL for Karakeep API. If None, will use KARAKEEP_BASE_URL environment variable.
         timeout: Request timeout in seconds (default: 30.0).
 
     Returns:
