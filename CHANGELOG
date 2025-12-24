@@ -1,0 +1,14 @@
+# Changelog
+
+## `v0.1.0` — [2025-12-24]
+
+- build: add uv-ship [7688495]
+- feat!: update environment variable name for base URL [3f6e19f]
+- chore: readme updates [bf820ca]
+- fix: rename extract_url_from_bookmark [06bc2d1]
+- test: Add/update comprehensive tests for Karakeep client and object models [2d7ef5b]
+- feat: init [3c7e5a4]
+- feat: initial configuration [92b2a22]
+- Initial commit [c1a52c3]
+
+## beginning of changelog
