@@ -4,7 +4,7 @@ A small, focused Python client for a subset of the Karakeep API (https://docs.ka
 
 This package provides an async client to interact with Karakeep programmatically, including bookmarking, asset uploads, tagging, and simple search/pagination helpers.
 
-Features
+## Features
 
 - Async KarakeepClient built on httpx
 - Get, search, create, update and delete bookmarks
@@ -13,7 +13,7 @@ Features
 - Optional Pydantic response validation (models are provided)
 - Utility to collect all bookmark URLs
 
-Quick overview of supported operations
+### Quick overview of supported operations
 
 - get_bookmarks_paged: fetch a single page of bookmarks (supports pagination via cursor)
 - get_bookmark: fetch a specific bookmark by id
@@ -24,7 +24,7 @@ Quick overview of supported operations
 - attach_bookmark_asset / update_bookmark_asset / delete_bookmark_asset
 - get_all_urls: convenience function to collect all bookmark URLs
 
-Installation
+## Installation
 
 From source (recommended for development):
 
@@ -42,14 +42,14 @@ Or, for a plain install:
 uv sync
 ```
 
-Configuration
+## Configuration
 
 The client expects two environment variables (or you can pass them to the KarakeepClient constructor):
 
 - KARAKEEP_API_KEY — your API key
-- KARAKEEP_BASEURL — base URL of your Karakeep instance (for example: https://selfhosted.example.com)
+- KARAKEEP_BASE_URL — base URL of your Karakeep instance (for example: https://selfhosted.example.com)
 
-Usage (quick start)
+## Usage (quick start)
 
 All client operations are asynchronous. Typical usage with Python 3.8+:
 
@@ -74,7 +74,7 @@ async def main():
 asyncio.run(main())
 ```
 
-Demo
+## Demo
 
 A demonstration script is included at `notebooks/karakeep_client_demo.py`. It shows example flows for:
 
@@ -83,16 +83,18 @@ A demonstration script is included at `notebooks/karakeep_client_demo.py`. It sh
 - Creating link/text/asset bookmarks
 - Uploading and retrieving assets
 
-Notes
+## Notes
 
 - Response validation: by default, responses are validated using Pydantic models defined in karakeep_client.karakeep. You can disable validation by passing `disable_response_validation=True` to the KarakeepClient constructor or to individual methods.
 - Asset retrieval returns raw bytes (Accept: */*). Bookmark content types include link, text, asset, and unknown; helper functions attempt to extract canonical URLs.
 - The client is asynchronous and built on httpx; ensure you run it from an async context.
 
-Contributing
+## Contributing
 
 Contributions and fixes are welcome. Please open issues or pull requests with clear descriptions and tests where appropriate.
 
-License
+Publishing is supported using [floRaths/uv-ship: a CLI-tool for shipping with uv](https://github.com/floRaths/uv-ship)
+
+## License
 
 [AGPL-3.0](https://github.com/ahgraber/karakeep-client/blob/main/LICENSE)

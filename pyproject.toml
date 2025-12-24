@@ -127,3 +127,11 @@ prerelease = "if-necessary-or-explicit"
 
 [tool.uv.sources]
 karakeep_client = { path = "src/karakeep_client", editable = true }
+
+[tool.uv-ship]
+release-branch = "main"
+tag-prefix = "v"
+allow-dirty = false
+changelog-path = "CHANGELOG"
+changelog-template = "- {message} [{hash}]"
+commit-message = "bump: {old_ver} → {new_ver}"
