@@ -1,5 +1,11 @@
 # Changelog
 
+## `v0.1.2` — [2025-12-27]
+
+- feat(client)!: implement async context management and client reuse [f8a30e8]
+- test: cover async client lifecycle [5ae73dc]
+- feat(client)!: implement async context management and client reuse [d8dcc41]
+
 ## `v0.1.1` — [2025-12-26]
 
 - refactor(models): unify model configuration under KarakeepBaseModel [1e4096f]

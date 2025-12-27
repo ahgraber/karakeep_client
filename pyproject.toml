@@ -5,7 +5,7 @@ build-backend = "uv_build"
 [project]
 name = "karakeep-client"
 description = "Python client for Karakeep API"
-version = "0.1.1"
+version = "0.1.2"
 # dynamic = [ "version" ]
 readme = "README.md"
 # license = { file = "LICENSE" }
