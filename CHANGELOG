@@ -1,5 +1,9 @@
 # Changelog
 
+## `v0.1.1` — [2025-12-26]
+
+- refactor(models): unify model configuration under KarakeepBaseModel [1e4096f]
+
 ## `v0.1.0` — [2025-12-24]
 
 - build: add uv-ship [7688495]
