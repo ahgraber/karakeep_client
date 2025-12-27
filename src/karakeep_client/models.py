@@ -3,7 +3,8 @@
 Refer to the karakeep openapi spec:
 https://raw.githubusercontent.com/karakeep-app/karakeep/refs/heads/main/packages/open-api/karakeep-openapi-spec.json
 
-NOTE: use `<object>.model_dump(by_alias=True)` to serialize these models
+NOTE: models accept both snake_case and camelCase input. Default serialization
+uses camelCase alias; use `<object>.model_dump(by_alias=False)` for snake_case output.
 """
 
 from __future__ import annotations
@@ -12,6 +13,16 @@ from enum import Enum
 from typing import List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
+from pydantic.alias_generators import to_camel
+
+
+class KarakeepBaseModel(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        validate_by_name=True,
+        validate_by_alias=True,
+        serialize_by_alias=True,
+    )
 
 
 class StatusTypes(str, Enum):
@@ -20,24 +31,18 @@ class StatusTypes(str, Enum):
     pending = "pending"
 
 
-class NumBookmarksByAttachedType(BaseModel):
-    model_config = ConfigDict(alias_generator=lambda field_name: field_name, populate_by_name=True)
-
+class NumBookmarksByAttachedType(KarakeepBaseModel):
     ai: Optional[float] = None
     human: Optional[float] = None
 
 
-class TagShort(BaseModel):
-    model_config = ConfigDict(alias_generator=lambda field_name: field_name, populate_by_name=True)
-
+class TagShort(KarakeepBaseModel):
     id: str
     name: str
     attached_by: Literal["ai", "human"] = Field(alias="attachedBy")
 
 
-class Tag(BaseModel):
-    model_config = ConfigDict(alias_generator=lambda field_name: field_name, populate_by_name=True)
-
+class Tag(KarakeepBaseModel):
     id: str
     name: str
     num_bookmarks: float = Field(alias="numBookmarks")
@@ -48,9 +53,7 @@ class Type(str, Enum):
     link = "link"
 
 
-class ContentTypeLink(BaseModel):
-    model_config = ConfigDict(alias_generator=lambda field_name: field_name, populate_by_name=True)
-
+class ContentTypeLink(KarakeepBaseModel):
     type: Literal["link"] = "link"
     url: str
     title: Optional[str] = None
@@ -71,21 +74,17 @@ class ContentTypeLink(BaseModel):
     date_modified: Optional[str] = Field(default=None, alias="dateModified")
 
 
-class ContentTypeUnknown(BaseModel):
+class ContentTypeUnknown(KarakeepBaseModel):
     type: Literal["unknown"] = "unknown"
 
 
-class ContentTypeText(BaseModel):
-    model_config = ConfigDict(alias_generator=lambda field_name: field_name, populate_by_name=True)
-
+class ContentTypeText(KarakeepBaseModel):
     type: Literal["text"] = "text"
     text: str
     source_url: Optional[str] = Field(default=None, alias="sourceUrl")
 
 
-class ContentTypeAsset(BaseModel):
-    model_config = ConfigDict(alias_generator=lambda field_name: field_name, populate_by_name=True)
-
+class ContentTypeAsset(KarakeepBaseModel):
     type: Literal["asset"] = "asset"
     asset_type: Literal["image", "pdf"] = Field(alias="assetType")
     asset_id: str = Field(alias="assetId")
@@ -95,9 +94,7 @@ class ContentTypeAsset(BaseModel):
     content: Optional[str] = None
 
 
-class BookmarkAsset(BaseModel):
-    model_config = ConfigDict(alias_generator=lambda field_name: field_name, populate_by_name=True)
-
+class BookmarkAsset(KarakeepBaseModel):
     id: str
     asset_type: Literal[
         "linkHtmlContent",
@@ -112,18 +109,14 @@ class BookmarkAsset(BaseModel):
     ] = Field(alias="assetType")
 
 
-class Asset(BaseModel):
-    model_config = ConfigDict(alias_generator=lambda field_name: field_name, populate_by_name=True)
-
+class Asset(KarakeepBaseModel):
     asset_id: str = Field(alias="assetId")
     content_type: str = Field(alias="contentType")
     size: float
     file_name: str = Field(alias="fileName")
 
 
-class Bookmark(BaseModel):
-    model_config = ConfigDict(alias_generator=lambda field_name: field_name, populate_by_name=True)
-
+class Bookmark(KarakeepBaseModel):
     id: str
     created_at: str = Field(alias="createdAt")
     modified_at: Optional[str] = Field(alias="modifiedAt")
@@ -141,16 +134,12 @@ class Bookmark(BaseModel):
     assets: List[BookmarkAsset]
 
 
-class PaginatedBookmarks(BaseModel):
-    model_config = ConfigDict(alias_generator=lambda field_name: field_name, populate_by_name=True)
-
+class PaginatedBookmarks(KarakeepBaseModel):
     bookmarks: List[Bookmark]
     next_cursor: Optional[str] = Field(alias="nextCursor")
 
 
-class Highlight(BaseModel):
-    model_config = ConfigDict(alias_generator=lambda field_name: field_name, populate_by_name=True)
-
+class Highlight(KarakeepBaseModel):
     bookmark_id: str = Field(alias="bookmarkId")
     start_offset: float = Field(alias="startOffset")
     end_offset: float = Field(alias="endOffset")
@@ -162,16 +151,12 @@ class Highlight(BaseModel):
     created_at: str = Field(alias="createdAt")
 
 
-class PaginatedHighlights(BaseModel):
-    model_config = ConfigDict(alias_generator=lambda field_name: field_name, populate_by_name=True)
-
+class PaginatedHighlights(KarakeepBaseModel):
     highlights: List[Highlight]
     next_cursor: Optional[str] = Field(alias="nextCursor")
 
 
-class BookmarkList(BaseModel):
-    model_config = ConfigDict(alias_generator=lambda field_name: field_name, populate_by_name=True)
-
+class BookmarkList(KarakeepBaseModel):
     id: str
     name: str
     description: Optional[str] = None
