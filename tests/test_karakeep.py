@@ -1,3 +1,4 @@
+import asyncio
 import json
 from unittest.mock import AsyncMock, mock_open, patch
 
@@ -400,6 +401,125 @@ async def test_add_bookmark_tags_validation_invalid_type(client: KarakeepClient)
     with pytest.raises(ValueError, match="'tag_ids' must be a list"):
         # Use type: ignore to test runtime validation
         await client.add_bookmark_tags("bookmark1", tag_ids="not_a_list")  # type: ignore
+
+
+def test_create_reuses_existing_client_instance(client: KarakeepClient):
+    """Test create() reuses the stored AsyncClient instance."""
+    # Arrange
+    reusable_client = AsyncMock()
+
+    with patch.object(KarakeepClient, "_ensure_client", return_value=reusable_client) as mock_ensure:
+        # Act
+        first_client = client.create()
+        second_client = client.create()
+
+    # Assert
+    assert first_client is second_client is reusable_client
+    mock_ensure.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_call_with_reusable_client_passes_existing_instance(client: KarakeepClient):
+    """Test _call uses an existing client instead of creating a new one."""
+    # Arrange
+    reusable_client = AsyncMock()
+    client._client = reusable_client
+
+    with patch.object(client, "_make_request", AsyncMock(return_value={"ok": True})) as mock_make_request:
+        # Act
+        response = await client._call("GET", "bookmarks")
+
+    # Assert
+    assert response == {"ok": True}
+    mock_make_request.assert_awaited_once()
+    assert mock_make_request.await_args.args[0] is reusable_client
+
+
+@pytest.mark.asyncio
+async def test_call_without_reusable_client_uses_temporary_client(client: KarakeepClient):
+    """Test _call creates and cleans up a temporary AsyncClient when none is stored."""
+    # Arrange
+    temp_client = AsyncMock()
+    temp_client.__aenter__.return_value = temp_client
+    temp_client.__aexit__.return_value = None
+
+    with (
+        patch.object(client, "_ensure_client", return_value=temp_client) as mock_ensure,
+        patch.object(client, "_make_request", AsyncMock(return_value={"ok": True})) as mock_make_request,
+    ):
+        # Act
+        response = await client._call("GET", "bookmarks")
+
+    # Assert
+    assert response == {"ok": True}
+    mock_ensure.assert_called_once()
+    mock_make_request.assert_awaited_once()
+    assert mock_make_request.await_args.args[0] is temp_client
+    temp_client.__aenter__.assert_awaited_once()
+    temp_client.__aexit__.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_async_context_manager_manages_client_lifecycle(client: KarakeepClient):
+    """Test async context manager creates and then closes the reusable client."""
+    # Arrange
+    managed_client = AsyncMock()
+
+    with patch.object(KarakeepClient, "_ensure_client", return_value=managed_client) as mock_ensure:
+        # Act
+        async with client as scoped_client:
+            assert scoped_client is client
+            assert client._client is managed_client
+            mock_ensure.assert_called_once()
+            managed_client.aclose.assert_not_awaited()
+
+    # Assert
+    managed_client.aclose.assert_awaited_once()
+    assert client._client is None
+
+
+@pytest.mark.asyncio
+async def test_aclose_closes_and_clears_reusable_client(client: KarakeepClient):
+    """Test aclose() shuts down the stored client and clears the reference."""
+    # Arrange
+    reusable_client = AsyncMock()
+    client._client = reusable_client
+
+    # Act
+    await client.aclose()
+
+    # Assert
+    reusable_client.aclose.assert_awaited_once()
+    assert client._client is None
+
+
+@pytest.mark.asyncio
+async def test_close_raises_when_called_inside_running_loop(client: KarakeepClient):
+    """Test close() refuses to run when an event loop is active."""
+    # Arrange
+    reusable_client = AsyncMock()
+    client._client = reusable_client
+
+    # Act & Assert
+    with pytest.raises(RuntimeError, match=r"close\(\) cannot be called while an event loop is running"):
+        client.close()
+
+    reusable_client.aclose.assert_not_awaited()
+
+
+def test_close_runs_async_close_when_no_running_loop(client: KarakeepClient):
+    """Test close() runs aclose() when no event loop is running."""
+    # Arrange
+    reusable_client = AsyncMock()
+    client._client = reusable_client
+
+    with patch("karakeep_client.karakeep.asyncio.get_running_loop", side_effect=RuntimeError):
+        # Act
+        client.close()
+
+    # Assert
+    reusable_client.aclose.assert_awaited_once()
+    assert client._client is None
 
 
 def test_extract_url_from_bookmark():

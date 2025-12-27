@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import contextlib
 from enum import Enum
 import json
@@ -126,12 +127,53 @@ class KarakeepClient:
         self.api_base_url = urljoin(self.base_url, "/api/v1/")  # needs trailing /
         self.timeout = timeout
         self.verbose = verbose
+        self._client: Optional[httpx.AsyncClient] = None
 
         self._default_headers = {
             "Content-Type": "application/json",
             "Accept": "application/json",
             "Authorization": f"Bearer {self.api_key}",
         }
+
+    def _ensure_client(self) -> httpx.AsyncClient:
+        """Create a new httpx async client."""
+        return httpx.AsyncClient(timeout=self.timeout)
+
+    def create(self) -> httpx.AsyncClient:
+        """Create and store the httpx async client for reuse."""
+        if self._client is None:
+            self._client = self._ensure_client()
+        return self._client
+
+    async def __aenter__(self) -> "KarakeepClient":
+        """Enter async context manager."""
+        self.create()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Exit async context manager and cleanup resources."""
+        await self.aclose()
+
+    async def aclose(self) -> None:
+        """Close the underlying httpx async client."""
+        if self._client is not None:
+            await self._client.aclose()
+            self._client = None
+
+    def close(self) -> None:
+        """Synchronously close the underlying httpx async client.
+
+        Raises:
+            RuntimeError: If called while an event loop is running.
+        """
+        if self._client is None:
+            return
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            asyncio.run(self.aclose())
+        else:
+            raise RuntimeError("close() cannot be called while an event loop is running; use aclose().")
 
     async def _call(
         self,
@@ -180,47 +222,64 @@ class KarakeepClient:
             if data:
                 logger.debug("Request data: %s", data)
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        if self._client is None:
+            async with self._ensure_client() as client:
+                return await self._make_request(client, method, url, params, data, files, headers, extra_headers)
+
+        return await self._make_request(self._client, method, url, params, data, files, headers, extra_headers)
+
+    async def _make_request(
+        self,
+        client: httpx.AsyncClient,
+        method: str,
+        url: str,
+        params: Optional[Dict[str, Any]],
+        data: Optional[Dict[str, Any]],
+        files: Optional[Dict[str, Any]],
+        headers: Dict[str, str],
+        extra_headers: Optional[Dict[str, str]],
+    ) -> Any:
+        """Execute a request with the provided client."""
+        try:
+            response = await client.request(
+                method=method,
+                url=url,
+                params=params,
+                json=data if data and not files else None,
+                files=files,
+                headers=headers,
+            )
+
+            if response.status_code == 401:
+                raise AuthenticationError("Authentication failed - check API key")
+
+            # Handle 204 No Content responses
+            if response.status_code == 204:
+                return {}
+
+            response.raise_for_status()
+
+            # For asset endpoints with Accept: */* header, return raw bytes
+            if extra_headers and extra_headers.get("Accept") == "*/*":
+                return response.content
+
+            # Try to parse as JSON
             try:
-                response = await client.request(
-                    method=method,
-                    url=url,
-                    params=params,
-                    json=data if data and not files else None,
-                    files=files,
-                    headers=headers,
-                )
+                return response.json()
+            except json.JSONDecodeError:
+                # If not JSON, return raw content
+                return response.content
 
-                if response.status_code == 401:
-                    raise AuthenticationError("Authentication failed - check API key")
-
-                # Handle 204 No Content responses
-                if response.status_code == 204:
-                    return {}
-
-                response.raise_for_status()
-
-                # For asset endpoints with Accept: */* header, return raw bytes
-                if extra_headers and extra_headers.get("Accept") == "*/*":
-                    return response.content
-
-                # Try to parse as JSON
-                try:
-                    return response.json()
-                except json.JSONDecodeError:
-                    # If not JSON, return raw content
-                    return response.content
-
-            except httpx.HTTPStatusError as e:
-                error_msg = f"HTTP {e.response.status_code} error for {method} {url}"
-                try:
-                    error_detail = e.response.json()
-                    error_msg += f": {error_detail}"
-                except json.JSONDecodeError:
-                    error_msg += f": {e.response.text}"
-                raise APIError(error_msg) from e
-            except httpx.RequestError as e:
-                raise APIError(f"Request failed for {method} {url}: {e}") from e
+        except httpx.HTTPStatusError as e:
+            error_msg = f"HTTP {e.response.status_code} error for {method} {url}"
+            try:
+                error_detail = e.response.json()
+                error_msg += f": {error_detail}"
+            except json.JSONDecodeError:
+                error_msg += f": {e.response.text}"
+            raise APIError(error_msg) from e
+        except httpx.RequestError as e:
+            raise APIError(f"Request failed for {method} {url}: {e}") from e
 
     async def get_bookmarks_paged(
         self,
