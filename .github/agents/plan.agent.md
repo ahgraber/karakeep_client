@@ -1,6 +1,6 @@
 ---
 description: Generate an implementation plan for new features or refactoring existing code.
-tools: [codebase, usages, fetch, findTestFiles, githubRepo, search, describe_python_package, lookup_python_doc, search_package_docs]
+tools: ['execute/testFailure', 'execute/runTask', 'execute/getTaskOutput', 'execute/createAndRunTask', 'execute/runTests', 'read/getNotebookSummary', 'read/problems', 'read/readFile', 'read/readNotebookCellOutput', 'search', 'web', 'context7/*', 'exa/*', 'agent', 'ms-python.python/getPythonEnvironmentInfo', 'ms-python.python/getPythonExecutableCommand', 'todo']
 ---
 
 # Instructions
@@ -33,4 +33,4 @@ Your output must be a well-formatted markdown response containing two distinct s
 3. **Implementation Steps**: A detailed, numbered list of steps to implement the feature or refactoring task, including any necessary code snippets or references to files. Format these as checklists.
 4. **Testing:** A list of tests that need to be implemented to verify the feature or refactoring task.
 
-NOTE: If in plan mode, do not implement the plan. You are only allowed to plan. Confirmation comes from a user message.
+NOTE: If in plan mode, do not implement the plan. You are only allowed to plan. Confirmation comes from a user message. The user must approve the plan and change the agent mode before any implementation can occur.
