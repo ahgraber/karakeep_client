@@ -67,6 +67,10 @@ class ContentTypeLink(KarakeepBaseModel):
     favicon: Optional[str] = None
     html_content: Optional[str] = Field(default=None, alias="htmlContent")
     content_asset_id: Optional[str] = Field(default=None, alias="contentAssetId")
+    pdf_asset_id: Optional[str] = Field(default=None, alias="pdfAssetId")
+    crawl_status: Optional[Literal["success", "failure", "pending"]] = Field(
+        default=None, alias="crawlStatus"
+    )
     crawled_at: Optional[str] = Field(default=None, alias="crawledAt")
     author: Optional[str] = None
     publisher: Optional[str] = None
@@ -99,14 +103,18 @@ class BookmarkAsset(KarakeepBaseModel):
     asset_type: Literal[
         "linkHtmlContent",
         "screenshot",
+        "pdf",
         "assetScreenshot",
         "bannerImage",
         "fullPageArchive",
         "video",
         "bookmarkAsset",
         "precrawledArchive",
+        "userUploaded",
+        "avatar",
         "unknown",
     ] = Field(alias="assetType")
+    file_name: Optional[str] = Field(default=None, alias="fileName")
 
 
 class Asset(KarakeepBaseModel):
@@ -123,6 +131,10 @@ class Bookmark(KarakeepBaseModel):
     title: Optional[str] = None
     archived: bool
     favourited: bool
+    source: Optional[
+        Literal["api", "web", "cli", "mobile", "extension", "singlefile", "rss", "import"]
+    ] = None
+    user_id: Optional[str] = Field(default=None, alias="userId")
     tagging_status: Optional[Literal["success", "failure", "pending"]] = Field(alias="taggingStatus")
     summarization_status: Optional[Literal["success", "failure", "pending"]] = Field(
         default=None, alias="summarizationStatus"
@@ -165,3 +177,5 @@ class BookmarkList(KarakeepBaseModel):
     type: Literal["manual", "smart"] = "manual"
     query: Optional[str] = None
     public: bool
+    has_collaborators: bool = Field(alias="hasCollaborators")
+    user_role: Literal["owner", "editor", "viewer", "public"] = Field(alias="userRole")
