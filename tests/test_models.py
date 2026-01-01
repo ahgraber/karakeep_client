@@ -110,14 +110,20 @@ class TestContentTypeLink:
             "url": "https://example.com",
             "title": "Test Title",
             "contentAssetId": "test_asset_id_123",
+            "pdfAssetId": "pdf_asset_456",
+            "crawlStatus": "success",
         }
 
         link = ContentTypeLink.model_validate(link_data)
         assert link.content_asset_id == "test_asset_id_123"
+        assert link.pdf_asset_id == "pdf_asset_456"
+        assert link.crawl_status == "success"
 
         # Test round-trip with aliases
         dumped = link.model_dump(by_alias=True)
         assert dumped["contentAssetId"] == "test_asset_id_123"
+        assert dumped["pdfAssetId"] == "pdf_asset_456"
+        assert dumped["crawlStatus"] == "success"
 
     def test_all_aliases(self):
         """Test that all ContentTypeLink fields have correct aliases."""
@@ -135,6 +141,8 @@ class TestContentTypeLink:
             "favicon": "https://example.com/favicon.ico",
             "htmlContent": "<html>content</html>",
             "contentAssetId": "content_123",
+            "pdfAssetId": "pdf_456",
+            "crawlStatus": "pending",
             "crawledAt": "2023-01-01T00:00:00Z",
             "author": "Test Author",
             "publisher": "Test Publisher",
@@ -153,6 +161,8 @@ class TestContentTypeLink:
         assert link.video_asset_id == "video_123"
         assert link.html_content == "<html>content</html>"
         assert link.content_asset_id == "content_123"
+        assert link.pdf_asset_id == "pdf_456"
+        assert link.crawl_status == "pending"
         assert link.crawled_at == "2023-01-01T00:00:00Z"
         assert link.date_published == "2023-01-01T00:00:00Z"
         assert link.date_modified == "2023-01-01T00:00:00Z"
@@ -167,6 +177,8 @@ class TestContentTypeLink:
         assert dumped["videoAssetId"] == "video_123"
         assert dumped["htmlContent"] == "<html>content</html>"
         assert dumped["contentAssetId"] == "content_123"
+        assert dumped["pdfAssetId"] == "pdf_456"
+        assert dumped["crawlStatus"] == "pending"
         assert dumped["crawledAt"] == "2023-01-01T00:00:00Z"
         assert dumped["datePublished"] == "2023-01-01T00:00:00Z"
         assert dumped["dateModified"] == "2023-01-01T00:00:00Z"
@@ -262,12 +274,15 @@ class TestBookmarkAsset:
         [
             "linkHtmlContent",
             "screenshot",
+            "pdf",
             "assetScreenshot",
             "bannerImage",
             "fullPageArchive",
             "video",
             "bookmarkAsset",
             "precrawledArchive",
+            "userUploaded",
+            "avatar",
             "unknown",
         ],
     )
@@ -292,6 +307,10 @@ class TestBookmarkAsset:
         asset = BookmarkAsset.model_validate(asset_data)
         assert asset.asset_type == "linkHtmlContent"
 
+        # Test optional file name
+        with_file_name = BookmarkAsset.model_validate({"id": "test_asset_id", "assetType": "pdf", "fileName": "doc.pdf"})
+        assert with_file_name.file_name == "doc.pdf"
+
         # Test round-trip with aliases
         dumped = asset.model_dump(by_alias=True)
         assert dumped["assetType"] == "linkHtmlContent"
@@ -309,6 +328,8 @@ class TestBookmark:
             "title": "Test",
             "archived": False,
             "favourited": False,
+            "source": "web",
+            "userId": "user-123",
             "taggingStatus": None,  # This should be allowed
             "summarizationStatus": None,
             "note": None,
@@ -453,6 +474,8 @@ class TestBookmark:
             "title": "Test Bookmark",
             "archived": False,
             "favourited": True,
+            "source": "api",
+            "userId": "user-123",
             "taggingStatus": "success",
             "summarizationStatus": "pending",
             "note": "Test note",
@@ -468,6 +491,8 @@ class TestBookmark:
         # Verify all camelCase aliases are preserved
         assert dumped["createdAt"] == "2023-01-01T00:00:00Z"
         assert dumped["modifiedAt"] == "2023-01-02T00:00:00Z"
+        assert dumped["source"] == "api"
+        assert dumped["userId"] == "user-123"
         assert dumped["taggingStatus"] == "success"
         assert dumped["summarizationStatus"] == "pending"
         assert dumped["tags"][0]["attachedBy"] == "ai"
@@ -551,7 +576,15 @@ class TestBookmarkList:
     @pytest.mark.parametrize("list_type", ["manual", "smart"])
     def test_valid_types(self, list_type):
         """Test BookmarkList with valid type values."""
-        list_data = {"id": "list123", "name": "My List", "icon": "📚", "type": list_type, "public": False}
+        list_data = {
+            "id": "list123",
+            "name": "My List",
+            "icon": "📚",
+            "type": list_type,
+            "public": False,
+            "hasCollaborators": True,
+            "userRole": "owner",
+        }
         bookmark_list = BookmarkList.model_validate(list_data)
         assert bookmark_list.type == list_type
 
@@ -563,6 +596,8 @@ class TestBookmarkList:
             "icon": "📚",
             "type": "automatic",  # Invalid type
             "public": False,
+            "hasCollaborators": False,
+            "userRole": "viewer",
         }
         with pytest.raises(ValidationError) as exc_info:
             BookmarkList.model_validate(list_data)
@@ -570,6 +605,13 @@ class TestBookmarkList:
 
     def test_default_type(self):
         """Test BookmarkList uses default type when not specified."""
-        list_data = {"id": "list123", "name": "My List", "icon": "📚", "public": False}
+        list_data = {
+            "id": "list123",
+            "name": "My List",
+            "icon": "📚",
+            "public": False,
+            "hasCollaborators": False,
+            "userRole": "viewer",
+        }
         bookmark_list = BookmarkList.model_validate(list_data)
         assert bookmark_list.type == "manual"  # Default value
