@@ -1,5 +1,10 @@
 # Changelog
 
+## `v0.3.0` — [2026-01-07]
+
+- feat(deps): update dependencies to resolve security vulnerability in urllib3 [a376fef]
+- test: add pip-audit security check [91044bb]
+
 ## `v0.2.0` — [2026-01-01]
 
 - Align datamodel with Karakeep v0.30.0 [bf1f288]
