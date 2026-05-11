@@ -1,5 +1,14 @@
 # Changelog
 
+## `v0.4.1` — [2026-05-11]
+
+- feat(client): align with Karakeep v0.32 — add `source` to `create_bookmark` and `attached_by` to tag attach/detach; correct `includeContent` docstrings for the v0.32 server-default flip [561974e]
+- test(url): harden URL utility tests with exact-output assertions and full coverage [39b3f6b]
+- test(pip-audit): improve reporting and add vulnerability ignore [8cc14a7]
+- chore: switch markdown linting from markdownlint to rumdl, format docs [43f5e85]
+- chore: update project dependencies [54f8fe1]
+- chore(gitignore): reorganize and update ignore patterns [1a0db37]
+
 ## `v0.4.0` — [2026-03-30]
 
 - build(docs): add Justfile and mod files for documentation management [441772b]
