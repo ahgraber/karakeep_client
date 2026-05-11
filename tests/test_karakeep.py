@@ -442,6 +442,55 @@ async def test_delete_bookmark_tags_success(client: KarakeepClient):
 
 
 @pytest.mark.asyncio
+async def test_add_bookmark_tags_with_attached_by(client: KarakeepClient):
+    """attached_by is emitted on every tag entry in the request body."""
+    bookmark_id = "bookmark1"
+    mock_response = {"attached": ["tag1"]}
+
+    with patch.object(client, "_call", return_value=mock_response) as mock_call:
+        await client.add_bookmark_tags(
+            bookmark_id, tag_ids=["tag1"], tag_names=["python"], attached_by="ai"
+        )
+
+    mock_call.assert_called_once_with(
+        "POST",
+        f"bookmarks/{bookmark_id}/tags",
+        data={"tags": [{"tagId": "tag1", "attachedBy": "ai"}, {"tagName": "python", "attachedBy": "ai"}]},
+    )
+
+
+@pytest.mark.asyncio
+async def test_delete_bookmark_tags_with_attached_by(client: KarakeepClient):
+    """attached_by is emitted on every tag entry for detach requests too."""
+    bookmark_id = "bookmark1"
+    mock_response = {"detached": ["tag1"]}
+
+    with patch.object(client, "_call", return_value=mock_response) as mock_call:
+        await client.delete_bookmark_tags(bookmark_id, tag_ids=["tag1"], attached_by="human")
+
+    mock_call.assert_called_once_with(
+        "DELETE",
+        f"bookmarks/{bookmark_id}/tags",
+        data={"tags": [{"tagId": "tag1", "attachedBy": "human"}]},
+    )
+
+
+@pytest.mark.asyncio
+async def test_create_bookmark_with_source(client: KarakeepClient, sample_bookmark_data):
+    """source is forwarded to the API when provided."""
+    with patch.object(client, "_call", return_value=sample_bookmark_data) as mock_call:
+        await client.create_bookmark(
+            bookmark_type="link", url="https://example.com", source="import"
+        )
+
+    mock_call.assert_called_once_with(
+        "POST",
+        "bookmarks",
+        data={"type": "link", "url": "https://example.com", "source": "import"},
+    )
+
+
+@pytest.mark.asyncio
 async def test_add_bookmark_tags_validation_no_tags(client: KarakeepClient):
     """Test add_bookmark_tags validates that at least one tag source is provided."""
     # Arrange & Act & Assert

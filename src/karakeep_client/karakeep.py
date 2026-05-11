@@ -334,7 +334,7 @@ class KarakeepClient:
             limit: Maximum number of bookmarks to return per page (optional, max 100).
             cursor: Pagination cursor for fetching the next page (optional).
             include_content: If set to true, bookmark's content will be included (default: False).
-                Note: API default is True, but client defaults to False for performance.
+                Matches the API default since Karakeep v0.32.
 
         Returns:
             PaginatedBookmarks: Paginated list of bookmarks for the current page.
@@ -373,7 +373,7 @@ class KarakeepClient:
         Args:
             bookmark_id: The ID of the bookmark to retrieve.
             include_content: If set to true, bookmark's content will be included (default: True).
-                Note: This matches the API default.
+                Note: API default flipped to False in Karakeep v0.32; client preserves the prior behavior.
 
         Returns:
             Bookmark: The requested bookmark.
@@ -407,7 +407,7 @@ class KarakeepClient:
             limit: Maximum number of bookmarks to return per page (optional, max 100).
             cursor: Pagination cursor for fetching the next page (optional).
             include_content: If set to true, bookmark's content will be included (default: True).
-                Note: This matches the API default.
+                Note: API default flipped to False in Karakeep v0.32; client preserves the prior behavior.
 
         Returns:
             PaginatedBookmarks: Paginated list of bookmarks matching the search query.
@@ -504,6 +504,7 @@ class KarakeepClient:
         note: str | None = None,
         summary: str | None = None,
         created_at: str | None = None,
+        source: str | None = None,
         url: str | None = None,
         precrawled_archive_id: str | None = None,
         text: str | None = None,
@@ -532,6 +533,8 @@ class KarakeepClient:
             request_body["summary"] = summary
         if created_at is not None:
             request_body["createdAt"] = created_at
+        if source is not None:
+            request_body["source"] = source
 
         # Add type-specific fields
         if bookmark_type == "link":
@@ -562,6 +565,7 @@ class KarakeepClient:
         note: str | None = None,
         summary: str | None = None,
         created_at: str | None = None,  # ISO 8601 format string
+        source: Literal["api", "web", "cli", "mobile", "extension", "singlefile", "rss", "import"] | None = None,
         # Link specific
         url: str | None = None,
         precrawled_archive_id: str | None = None,
@@ -583,6 +587,8 @@ class KarakeepClient:
             note: Optional bookmark note content.
             summary: Optional bookmark summary content.
             created_at: Optional creation timestamp override in ISO 8601 format.
+            source: Optional origin tag recorded on the bookmark. Server defaults to "api"
+                when called via the API.
             url: URL for link bookmarks. Required when ``bookmark_type`` is ``"link"``.
             precrawled_archive_id: Optional pre-crawled archive ID for link bookmarks.
             text: Text content for text bookmarks. Required when ``bookmark_type`` is ``"text"``.
@@ -610,6 +616,7 @@ class KarakeepClient:
             note=note,
             summary=summary,
             created_at=created_at,
+            source=source,
             url=url,
             precrawled_archive_id=precrawled_archive_id,
             text=text,
@@ -678,12 +685,15 @@ class KarakeepClient:
     def _build_tags_payload(
         tag_ids: list[str] | None = None,
         tag_names: list[str] | None = None,
+        attached_by: Literal["ai", "human"] | None = None,
     ) -> dict[str, Any]:
         """Validate tag arguments and build the API request payload.
 
         Args:
             tag_ids: List of existing tag IDs.
             tag_names: List of tag names.
+            attached_by: Optional attribution applied to every tag in the request
+                ("ai" or "human"). Server default is "human".
 
         Returns:
             dict[str, Any]: Request body in the format ``{"tags": [...]}``.
@@ -710,11 +720,17 @@ class KarakeepClient:
                 if not isinstance(tag_name, str) or not tag_name.strip():
                     raise ValueError(f"Tag name at index {i} must be a non-empty string")
 
+        def _entry(key: str, value: str) -> dict[str, str]:
+            entry = {key: value.strip()}
+            if attached_by is not None:
+                entry["attachedBy"] = attached_by
+            return entry
+
         tags_list: list[dict[str, str]] = []
         if tag_ids:
-            tags_list.extend({"tagId": tid.strip()} for tid in tag_ids)
+            tags_list.extend(_entry("tagId", tid) for tid in tag_ids)
         if tag_names:
-            tags_list.extend({"tagName": tname.strip()} for tname in tag_names)
+            tags_list.extend(_entry("tagName", tname) for tname in tag_names)
 
         return {"tags": tags_list}
 
@@ -723,6 +739,7 @@ class KarakeepClient:
         bookmark_id: str,
         tag_ids: list[str] | None = None,
         tag_names: list[str] | None = None,
+        attached_by: Literal["ai", "human"] | None = None,
     ) -> BookmarkTagsAttachResponse:
         """Attach one or more tags to a bookmark. Corresponds to POST /bookmarks/{bookmarkId}/tags.
 
@@ -730,6 +747,8 @@ class KarakeepClient:
             bookmark_id: The ID of the bookmark.
             tag_ids: List of existing tag IDs to attach (optional).
             tag_names: List of tag names to attach (will create tags if they don't exist) (optional).
+            attached_by: Optional attribution recorded for each attached tag
+                ("ai" or "human"). Server default is "human".
 
         Returns:
             BookmarkTagsAttachResponse: Response containing the list of attached tag IDs.
@@ -738,7 +757,7 @@ class KarakeepClient:
             ValueError: If no tags are provided or if arguments are invalid.
             APIError: If the API request fails.
         """
-        tags_data = self._build_tags_payload(tag_ids, tag_names)
+        tags_data = self._build_tags_payload(tag_ids, tag_names, attached_by)
         endpoint = f"bookmarks/{bookmark_id}/tags"
         response_data = await self._call("POST", endpoint, data=tags_data)
         return BookmarkTagsAttachResponse.model_validate(response_data)
@@ -748,6 +767,7 @@ class KarakeepClient:
         bookmark_id: str,
         tag_ids: list[str] | None = None,
         tag_names: list[str] | None = None,
+        attached_by: Literal["ai", "human"] | None = None,
     ) -> BookmarkTagsDetachResponse:
         """Detach one or more tags from a bookmark. Corresponds to DELETE /bookmarks/{bookmarkId}/tags.
 
@@ -755,6 +775,8 @@ class KarakeepClient:
             bookmark_id: The ID of the bookmark.
             tag_ids: List of existing tag IDs to detach (optional).
             tag_names: List of tag names to detach (optional).
+            attached_by: Optional attribution filter — only detach tags attached as
+                "ai" or "human". Server default is "human".
 
         Returns:
             BookmarkTagsDetachResponse: Response containing the list of detached tag IDs.
@@ -763,7 +785,7 @@ class KarakeepClient:
             ValueError: If no tags are provided or if arguments are invalid.
             APIError: If the API request fails.
         """
-        tags_data = self._build_tags_payload(tag_ids, tag_names)
+        tags_data = self._build_tags_payload(tag_ids, tag_names, attached_by)
         endpoint = f"bookmarks/{bookmark_id}/tags"
         response_data = await self._call("DELETE", endpoint, data=tags_data)
         return BookmarkTagsDetachResponse.model_validate(response_data)
